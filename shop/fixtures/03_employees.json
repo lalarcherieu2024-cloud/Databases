@@ -1,0 +1,7 @@
+[
+  {"model": "shop.employee", "pk": 1, "fields": {"first_name": "Paqui", "last_name": "Sánchez", "role": "Owner / Master Tailor", "phone": "+34 600 000 001", "specialization": "Wedding dresses, suits", "is_active": true}},
+  {"model": "shop.employee", "pk": 2, "fields": {"first_name": "Isabel", "last_name": "Romero", "role": "Seamstress", "phone": "+34 600 000 002", "specialization": "Dresses and blouses", "is_active": true}},
+  {"model": "shop.employee", "pk": 3, "fields": {"first_name": "Miguel", "last_name": "Torres", "role": "Tailor", "phone": "+34 600 000 003", "specialization": "Suits and trousers", "is_active": true}},
+  {"model": "shop.employee", "pk": 4, "fields": {"first_name": "Elena", "last_name": "Vargas", "role": "Cutter", "phone": "+34 600 000 004", "specialization": "Pattern cutting", "is_active": true}},
+  {"model": "shop.employee", "pk": 5, "fields": {"first_name": "José", "last_name": "Herrera", "role": "Apprentice", "phone": "+34 600 000 005", "specialization": "Finishing, hand stitching", "is_active": false}}
+]

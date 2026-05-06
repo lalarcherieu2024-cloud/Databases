@@ -1,0 +1,7 @@
+[
+  {"model": "shop.orderitem", "pk": 1, "fields": {"order": 1, "garment": 1, "quantity": 1, "unit_price": "120.00"}},
+  {"model": "shop.orderitem", "pk": 2, "fields": {"order": 2, "garment": 2, "quantity": 1, "unit_price": "400.00"}},
+  {"model": "shop.orderitem", "pk": 3, "fields": {"order": 2, "garment": 3, "quantity": 1, "unit_price": "250.00"}},
+  {"model": "shop.orderitem", "pk": 4, "fields": {"order": 3, "garment": 4, "quantity": 1, "unit_price": "85.00"}},
+  {"model": "shop.orderitem", "pk": 5, "fields": {"order": 4, "garment": 5, "quantity": 1, "unit_price": "1850.00"}}
+]

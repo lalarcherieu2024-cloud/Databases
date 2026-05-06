@@ -1,0 +1,14 @@
+[
+  {"model": "shop.productionlog", "pk": 1, "fields": {"ticket": 1, "performed_by": 4, "from_stage": "order_received", "to_stage": "design_confirmed", "comments": "Customer confirmed the design over phone.", "timestamp": "2026-04-17T10:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 2, "fields": {"ticket": 1, "performed_by": 4, "from_stage": "design_confirmed", "to_stage": "cutting", "comments": "Pattern cut from cotton pink.", "timestamp": "2026-04-22T11:30:00Z"}},
+  {"model": "shop.productionlog", "pk": 3, "fields": {"ticket": 1, "performed_by": 2, "from_stage": "cutting", "to_stage": "sewing", "comments": "Started sewing main panels.", "timestamp": "2026-04-28T14:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 4, "fields": {"ticket": 2, "performed_by": 4, "from_stage": "order_received", "to_stage": "design_confirmed", "comments": "Bridegroom approved the lapel sample.", "timestamp": "2026-04-23T09:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 5, "fields": {"ticket": 2, "performed_by": 4, "from_stage": "design_confirmed", "to_stage": "cutting", "comments": "Wool navy cut to pattern.", "timestamp": "2026-04-29T11:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 6, "fields": {"ticket": 4, "performed_by": 2, "from_stage": "order_received", "to_stage": "design_confirmed", "comments": "Standard blouse, no design changes.", "timestamp": "2026-03-12T10:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 7, "fields": {"ticket": 4, "performed_by": 4, "from_stage": "design_confirmed", "to_stage": "cutting", "comments": "Cotton white cut.", "timestamp": "2026-03-14T11:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 8, "fields": {"ticket": 4, "performed_by": 2, "from_stage": "cutting", "to_stage": "sewing", "comments": "Sewing complete.", "timestamp": "2026-03-18T14:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 9, "fields": {"ticket": 4, "performed_by": 2, "from_stage": "sewing", "to_stage": "finishing", "comments": "Buttons and hem.", "timestamp": "2026-03-21T10:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 10, "fields": {"ticket": 4, "performed_by": 1, "from_stage": "finishing", "to_stage": "quality_check", "comments": "Inspection passed.", "timestamp": "2026-03-22T16:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 11, "fields": {"ticket": 4, "performed_by": 1, "from_stage": "quality_check", "to_stage": "ready_for_delivery", "comments": "Ready for customer pickup.", "timestamp": "2026-03-23T17:00:00Z"}},
+  {"model": "shop.productionlog", "pk": 12, "fields": {"ticket": 5, "performed_by": 1, "from_stage": "order_received", "to_stage": "design_confirmed", "comments": "Bride approved the lace pattern.", "timestamp": "2026-04-15T15:00:00Z"}}
+]

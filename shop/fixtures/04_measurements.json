@@ -1,0 +1,8 @@
+[
+  {"model": "shop.measurement", "pk": 1, "fields": {"bust": "92.00", "waist": "72.00", "hips": "98.00", "shoulder_width": "38.00", "sleeve_length": "58.00", "inseam": null, "total_length": "110.00", "extra_notes": "Slight asymmetry on right shoulder"}},
+  {"model": "shop.measurement", "pk": 2, "fields": {"bust": "100.00", "waist": "88.00", "hips": "102.00", "shoulder_width": "46.00", "sleeve_length": "64.00", "inseam": "82.00", "total_length": null, "extra_notes": "Wedding suit jacket measurements"}},
+  {"model": "shop.measurement", "pk": 3, "fields": {"bust": "86.00", "waist": "66.00", "hips": "92.00", "shoulder_width": "36.00", "sleeve_length": "55.00", "inseam": null, "total_length": "95.00", "extra_notes": ""}},
+  {"model": "shop.measurement", "pk": 4, "fields": {"bust": null, "waist": "84.00", "hips": "100.00", "shoulder_width": null, "sleeve_length": null, "inseam": "78.00", "total_length": null, "extra_notes": "Trousers only"}},
+  {"model": "shop.measurement", "pk": 5, "fields": {"bust": "88.00", "waist": "70.00", "hips": "96.00", "shoulder_width": "37.00", "sleeve_length": null, "inseam": null, "total_length": "140.00", "extra_notes": "Wedding dress - long train"}},
+  {"model": "shop.measurement", "pk": 6, "fields": {"bust": null, "waist": "88.00", "hips": "102.00", "shoulder_width": null, "sleeve_length": null, "inseam": "82.00", "total_length": null, "extra_notes": "Wedding suit trousers - same body as measurement #2"}}
+]

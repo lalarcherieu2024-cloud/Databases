@@ -1,0 +1,12 @@
+[
+  {"model": "shop.material", "pk": 1, "fields": {"name": "Cotton White", "fabric_type": "Cotton", "color": "White", "stock_meters": "45.50", "price_per_meter": "8.50"}},
+  {"model": "shop.material", "pk": 2, "fields": {"name": "Cotton Black", "fabric_type": "Cotton", "color": "Black", "stock_meters": "30.00", "price_per_meter": "8.50"}},
+  {"model": "shop.material", "pk": 3, "fields": {"name": "Silk Ivory", "fabric_type": "Silk", "color": "Ivory", "stock_meters": "12.00", "price_per_meter": "35.00"}},
+  {"model": "shop.material", "pk": 4, "fields": {"name": "Wool Navy", "fabric_type": "Wool", "color": "Navy", "stock_meters": "20.00", "price_per_meter": "22.00"}},
+  {"model": "shop.material", "pk": 5, "fields": {"name": "Linen Beige", "fabric_type": "Linen", "color": "Beige", "stock_meters": "18.00", "price_per_meter": "14.00"}},
+  {"model": "shop.material", "pk": 6, "fields": {"name": "Polyester Lining Black", "fabric_type": "Polyester", "color": "Black", "stock_meters": "60.00", "price_per_meter": "4.50"}},
+  {"model": "shop.material", "pk": 7, "fields": {"name": "Tulle White", "fabric_type": "Tulle", "color": "White", "stock_meters": "25.00", "price_per_meter": "6.00"}},
+  {"model": "shop.material", "pk": 8, "fields": {"name": "Lace Off-White", "fabric_type": "Lace", "color": "Off-White", "stock_meters": "8.00", "price_per_meter": "45.00"}},
+  {"model": "shop.material", "pk": 9, "fields": {"name": "Wool Charcoal", "fabric_type": "Wool", "color": "Charcoal", "stock_meters": "15.00", "price_per_meter": "24.00"}},
+  {"model": "shop.material", "pk": 10, "fields": {"name": "Cotton Pastel Pink", "fabric_type": "Cotton", "color": "Pink", "stock_meters": "10.00", "price_per_meter": "9.00"}}
+]

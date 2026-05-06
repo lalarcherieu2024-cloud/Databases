@@ -1,0 +1,67 @@
+[
+  {
+    "model": "shop.customer",
+    "pk": 1,
+    "fields": {
+      "first_name": "María",
+      "last_name": "García",
+      "phone": "+34 612 345 678",
+      "email": "maria.garcia@example.com",
+      "address": "Calle Mayor 12, Madrid",
+      "notes": "Prefers natural fabrics. Allergic to wool.",
+      "created_at": "2026-04-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "shop.customer",
+    "pk": 2,
+    "fields": {
+      "first_name": "Carlos",
+      "last_name": "Rodríguez",
+      "phone": "+34 623 456 789",
+      "email": "carlos.r@example.com",
+      "address": "Avenida del Sol 45, Madrid",
+      "notes": "Wedding suit client. Very particular about stitching.",
+      "created_at": "2026-04-20T14:30:00Z"
+    }
+  },
+  {
+    "model": "shop.customer",
+    "pk": 3,
+    "fields": {
+      "first_name": "Ana",
+      "last_name": "Martínez",
+      "phone": "+34 634 567 890",
+      "email": "ana.martinez@example.com",
+      "address": "Plaza España 8, Madrid",
+      "notes": "Repeat customer. Likes pastel colors.",
+      "created_at": "2026-03-10T09:15:00Z"
+    }
+  },
+  {
+    "model": "shop.customer",
+    "pk": 4,
+    "fields": {
+      "first_name": "Javier",
+      "last_name": "López",
+      "phone": "+34 645 678 901",
+      "email": "",
+      "address": "Calle Toledo 23, Madrid",
+      "notes": "",
+      "created_at": "2026-04-25T16:45:00Z"
+    }
+  },
+  {
+    "model": "shop.customer",
+    "pk": 5,
+    "fields": {
+      "first_name": "Lucía",
+      "last_name": "Fernández",
+      "phone": "+34 656 789 012",
+      "email": "lucia.fernandez@example.com",
+      "address": "Gran Vía 100, Madrid",
+      "notes": "Bride. Wedding scheduled for June 2026.",
+      "created_at": "2026-04-01T11:20:00Z"
+    }
+  }
+]
