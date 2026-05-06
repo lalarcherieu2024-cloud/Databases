@@ -58,12 +58,21 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ['id', 'customer', 'order_date', 'due_date', 'status', 'total_price']
+    list_display = ['id', 'customer', 'order_date', 'due_date', 'status', 'total_items', 'total_price']
     list_filter = ['status', 'due_date', 'order_date']
     search_fields = ['customer__first_name', 'customer__last_name', 'id']
     inlines = [OrderItemInline]
     autocomplete_fields = ['customer']
+    actions = ['mark_as_confirmed']                                    
 
+    def total_items(self, obj):                                        
+        return obj.items.count()
+    total_items.short_description = 'Items'                            
+
+    @admin.action(description='Mark selected orders as confirmed')     
+    def mark_as_confirmed(self, request, queryset):                    
+        updated = queryset.update(status='confirmed')                  
+        self.message_user(request, f'{updated} order(s) marked as confirmed.')  
 
 @admin.register(OrderItem)
 class OrderItemAdmin(ModelAdmin):
