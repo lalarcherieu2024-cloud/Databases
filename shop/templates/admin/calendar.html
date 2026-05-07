@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} — Costuras de Paqui</title>
+
+    <!-- Material icon font for the header -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Inter font (matches Unfold's default UI font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #d23471;
+            --primary-light: #fce7ee;
+            --primary-dark: #96214c;
+            --bg: #fafaf9;
+            --card: #ffffff;
+            --border: #e7e5e4;
+            --text: #1c1917;
+            --text-muted: #78716c;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background:
+                radial-gradient(ellipse at top, var(--primary-light) 0%, transparent 50%),
+                var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .brand-icon .material-icons { font-size: 20px; }
+        .brand-text h1 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .brand-text p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .back-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+        .back-link:hover {
+            background: var(--primary-light);
+        }
+        .back-link .material-icons { font-size: 18px; }
+
+        /* LEGEND */
+        .legend {
+            display: flex;
+            gap: 24px;
+            padding: 14px 40px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px white, 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* CALENDAR CONTAINER */
+        #calendar {
+            max-width: 1400px;
+            margin: 28px auto;
+            padding: 24px;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        /* FULLCALENDAR THEMING */
+        .fc {
+            font-family: inherit !important;
+        }
+
+        /* Toolbar */
+        .fc .fc-toolbar.fc-header-toolbar {
+            margin-bottom: 24px !important;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 22px !important;
+            font-weight: 700 !important;
+            color: var(--text);
+        }
+
+        /* Buttons */
+        .fc .fc-button {
+            background: var(--card) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text) !important;
+            font-weight: 500 !important;
+            padding: 7px 14px !important;
+            font-size: 13px !important;
+            border-radius: 8px !important;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.15s;
+            text-transform: none !important;
+        }
+        .fc .fc-button:hover {
+            background: var(--primary-light) !important;
+            border-color: var(--primary) !important;
+            color: var(--primary-dark) !important;
+        }
+        .fc .fc-button-primary:not(:disabled).fc-button-active,
+        .fc .fc-button-primary:not(:disabled):active {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+        }
+        .fc .fc-button-group {
+            gap: 4px;
+        }
+        .fc .fc-today-button {
+            background: var(--primary) !important;
+            border-color: var(--primary) !important;
+            color: white !important;
+        }
+        .fc .fc-today-button:hover {
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+        }
+        .fc .fc-today-button:disabled {
+            opacity: 0.5;
+        }
+
+        /* Day grid */
+        .fc-theme-standard td,
+        .fc-theme-standard th {
+            border-color: var(--border) !important;
+        }
+        .fc-theme-standard .fc-scrollgrid {
+            border-color: var(--border) !important;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .fc .fc-col-header-cell {
+            background: #f5f5f4;
+            padding: 12px 0 !important;
+        }
+        .fc .fc-col-header-cell-cushion {
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 0 !important;
+        }
+        .fc .fc-daygrid-day-number {
+            color: var(--text);
+            font-weight: 500;
+            padding: 8px 10px !important;
+        }
+        .fc .fc-day-today {
+            background: var(--primary-light) !important;
+        }
+        .fc .fc-day-today .fc-daygrid-day-number {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+        .fc .fc-day-other .fc-daygrid-day-number {
+            color: #d6d3d1;
+        }
+
+        /* Events */
+        .fc-event {
+            cursor: pointer;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 3px 8px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            margin: 1px 4px !important;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .fc-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+        .fc-event-title {
+            font-weight: 500 !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Time grid (week/day views) */
+        .fc-timegrid-event {
+            border-radius: 6px !important;
+        }
+
+        /* Empty state polish */
+        .fc-daygrid-day {
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">
+            <div class="brand-icon">
+                <span class="material-icons">checkroom</span>
+            </div>
+            <div class="brand-text">
+                <h1>{{ title }}</h1>
+                <p>Costuras de Paqui · Sewing shop management</p>
+            </div>
+        </div>
+        <a href="/admin/" class="back-link">
+            <span class="material-icons">arrow_back</span>
+            Back to admin
+        </a>
+    </div>
+
+    <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Received / Confirmed</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#eab308"></span> In Production</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Ready / Delivered</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Cancelled</span>
+    </div>
+
+    <div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: '/admin/calendar/events/',
+                eventClick: function (info) {
+                    info.jsEvent.preventDefault();
+                    if (info.event.url) {
+                        window.location.href = info.event.url;
+                    }
+                },
+                eventDisplay: 'block',
+                height: 'auto',
+                firstDay: 1,
+                buttonText: {
+                    today: 'Today',
+                    month: 'Month',
+                    week:  'Week',
+                    day:   'Day'
+                },
+                dayMaxEvents: 4,
+                moreLinkClick: 'popover',
+            });
+
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

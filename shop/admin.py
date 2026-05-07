@@ -15,6 +15,7 @@ OWNERSHIP:
 """
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline, StackedInline
+from unfold.decorators import display
 
 from .models import (
     Customer,
@@ -58,12 +59,41 @@ class OrderItemInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_display = ['id', 'customer', 'order_date', 'due_date', 'status', 'total_price']
+    list_display = ['id', 'customer', 'order_date', 'due_date', 'status_badge', 'items_display', 'total_price_display']
     list_filter = ['status', 'due_date', 'order_date']
     search_fields = ['customer__first_name', 'customer__last_name', 'id']
     inlines = [OrderItemInline]
     autocomplete_fields = ['customer']
+    actions = ['mark_as_confirmed']
 
+    @display(description='Items')
+    def items_display(self, obj):
+        count = obj.items.count()
+        return f"{count} item{'s' if count != 1 else ''}"
+
+    @display(description='Total', ordering='total_price')
+    def total_price_display(self, obj):
+        return f"€{obj.total_price:,.2f}"
+
+    @display(
+        description='Status',
+        ordering='status',
+        label={
+            'received': 'info',
+            'confirmed': 'info',
+            'in_production': 'warning',
+            'ready_for_delivery': 'success',
+            'delivered': 'success',
+            'cancelled': 'danger',
+        },
+    )
+    def status_badge(self, obj):
+        return obj.status, obj.get_status_display()
+
+    @admin.action(description='Mark selected orders as confirmed')
+    def mark_as_confirmed(self, request, queryset):
+        updated = queryset.update(status='confirmed')
+        self.message_user(request, f'{updated} order(s) marked as confirmed.')
 
 @admin.register(OrderItem)
 class OrderItemAdmin(ModelAdmin):
@@ -89,11 +119,36 @@ class OrderItemAdmin(ModelAdmin):
 
 @admin.register(Garment)
 class GarmentAdmin(ModelAdmin):
-    list_display = ['id', 'garment_type', 'color', 'priority', 'status', 'created_at']
+    list_display = ['id', 'garment_type', 'color', 'priority_badge', 'status_badge', 'created_at']
     list_filter = ['status', 'priority', 'garment_type']
     search_fields = ['garment_type', 'color']
     filter_horizontal = ['materials']
     autocomplete_fields = ['measurement']
+
+    @display(
+        description='Status',
+        ordering='status',
+        label={
+            'pending': 'info',
+            'in_production': 'warning',
+            'completed': 'success',
+            'on_hold': 'danger',
+        },
+    )
+    def status_badge(self, obj):
+        return obj.status, obj.get_status_display()
+
+    @display(
+        description='Priority',
+        ordering='priority',
+        label={
+            'normal': 'info',
+            'urgent': 'warning',
+            'rush': 'danger',
+        },
+    )
+    def priority_badge(self, obj):
+        return obj.priority, obj.get_priority_display()
 
 
 @admin.register(Measurement)
@@ -120,20 +175,47 @@ class MaterialAdmin(ModelAdmin):
 #     obj exists, override has_delete_permission)
 #   - Optional admin action: "Advance ticket to next stage" (creates a
 #     ProductionLog row automatically)
-
 @admin.register(Employee)
 class EmployeeAdmin(ModelAdmin):
     list_display = ['first_name', 'last_name', 'role', 'specialization', 'is_active']
     list_filter = ['is_active', 'role']
     search_fields = ['first_name', 'last_name', 'role']
-
-
+    
 @admin.register(WorkTicket)
 class WorkTicketAdmin(ModelAdmin):
-    list_display = ['id', 'garment', 'assigned_to', 'current_stage', 'priority', 'deadline']
+    list_display = ['id', 'garment', 'assigned_to', 'stage_badge', 'priority_badge', 'deadline']
     list_filter = ['current_stage', 'priority']
     search_fields = ['id', 'garment__garment_type']
     autocomplete_fields = ['garment', 'assigned_to']
+
+    @display(
+        description='Stage',
+        ordering='current_stage',
+        label={
+            'order_received': 'info',
+            'design_confirmed': 'info',
+            'cutting': 'warning',
+            'sewing': 'warning',
+            'finishing': 'warning',
+            'quality_check': 'warning',
+            'ready_for_delivery': 'success',
+            'rework': 'danger',
+        },
+    )
+    def stage_badge(self, obj):
+        return obj.current_stage, obj.get_current_stage_display()
+
+    @display(
+        description='Priority',
+        ordering='priority',
+        label={
+            'normal': 'info',
+            'urgent': 'warning',
+            'rush': 'danger',
+        },
+    )
+    def priority_badge(self, obj):
+        return obj.priority, obj.get_priority_display()
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Business Rule 5: only active employees can be assigned to new tickets
@@ -142,11 +224,35 @@ class WorkTicketAdmin(ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+
+# Reusable color map for ticket stages (used by ProductionLogAdmin too)
+TICKET_STAGE_LABELS = {
+    'order_received': 'info',
+    'design_confirmed': 'info',
+    'cutting': 'warning',
+    'sewing': 'warning',
+    'finishing': 'warning',
+    'quality_check': 'warning',
+    'ready_for_delivery': 'success',
+    'rework': 'danger',
+}
+
+
 @admin.register(ProductionLog)
 class ProductionLogAdmin(ModelAdmin):
-    list_display = ['id', 'ticket', 'from_stage', 'to_stage', 'performed_by', 'timestamp']
+    list_display = ['id', 'ticket', 'from_stage_badge', 'to_stage_badge', 'performed_by', 'timestamp']
     list_filter = ['to_stage', 'timestamp']
     search_fields = ['ticket__id', 'comments']
+
+    @display(description='From', ordering='from_stage', label=TICKET_STAGE_LABELS)
+    def from_stage_badge(self, obj):
+        if not obj.from_stage:
+            return None, '—'
+        return obj.from_stage, obj.get_from_stage_display()
+
+    @display(description='To', ordering='to_stage', label=TICKET_STAGE_LABELS)
+    def to_stage_badge(self, obj):
+        return obj.to_stage, obj.get_to_stage_display()
 
     def get_readonly_fields(self, request, obj=None):
         # Business Rule 9: production log entries are immutable once created
