@@ -3,7 +3,6 @@ Costuras de Paqui - Admin Configuration
 """
 
 from django.contrib import admin, messages
-from django.utils.html import format_html
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 
@@ -16,10 +15,6 @@ from .models import (
 )
 
 
-# ============================================================
-# MEMBER 1 - Customer
-# ============================================================
-
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
     list_display = ("full_name", "phone", "email", "created_at")
@@ -27,13 +22,10 @@ class CustomerAdmin(ModelAdmin):
     list_filter = ("created_at",)
     readonly_fields = ("created_at",)
 
+    @display(description="Full name")
     def full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
 
-
-# ============================================================
-# MEMBER 2 - Order, OrderItem
-# ============================================================
 
 class OrderItemInline(TabularInline):
     model = OrderItem
@@ -59,20 +51,9 @@ class OrderAdmin(ModelAdmin):
     def total_price_display(self, obj):
         return f"€{obj.total_price:,.2f}"
 
-    @display(
-        description="Status",
-        ordering="status",
-        label={
-            "received": "info",
-            "confirmed": "info",
-            "in_production": "warning",
-            "ready_for_delivery": "success",
-            "delivered": "success",
-            "cancelled": "danger",
-        },
-    )
+    @display(description="Status", ordering="status")
     def status_badge(self, obj):
-        return obj.status, obj.get_status_display()
+        return obj.get_status_display()
 
     @admin.action(description="Mark selected orders as confirmed")
     def mark_as_confirmed(self, request, queryset):
@@ -86,10 +67,6 @@ class OrderItemAdmin(ModelAdmin):
     search_fields = ["order__id", "garment__garment_type"]
 
 
-# ============================================================
-# MEMBER 3 - Garment, Measurement, Material
-# ============================================================
-
 @admin.register(Garment)
 class GarmentAdmin(ModelAdmin):
     list_display = ["id", "garment_type", "color", "priority_badge", "status_badge", "created_at"]
@@ -98,30 +75,13 @@ class GarmentAdmin(ModelAdmin):
     filter_horizontal = ["materials"]
     autocomplete_fields = ["measurement"]
 
-    @display(
-        description="Status",
-        ordering="status",
-        label={
-            "pending": "info",
-            "in_production": "warning",
-            "completed": "success",
-            "on_hold": "danger",
-        },
-    )
+    @display(description="Status", ordering="status")
     def status_badge(self, obj):
-        return obj.status, obj.get_status_display()
+        return obj.get_status_display()
 
-    @display(
-        description="Priority",
-        ordering="priority",
-        label={
-            "normal": "info",
-            "urgent": "warning",
-            "rush": "danger",
-        },
-    )
+    @display(description="Priority", ordering="priority")
     def priority_badge(self, obj):
-        return obj.priority, obj.get_priority_display()
+        return obj.get_priority_display()
 
 
 @admin.register(Measurement)
@@ -140,21 +100,6 @@ class MaterialAdmin(ModelAdmin):
     def low_stock(self, obj):
         return obj.stock_meters < 5
 
-
-# ============================================================
-# MEMBER 4 - Employee, WorkTicket, ProductionLog
-# ============================================================
-
-TICKET_STAGE_LABELS = {
-    "order_received": "info",
-    "design_confirmed": "info",
-    "cutting": "warning",
-    "sewing": "warning",
-    "finishing": "warning",
-    "quality_check": "warning",
-    "ready_for_delivery": "success",
-    "rework": "danger",
-}
 
 STAGE_ORDER = [
     "order_received",
@@ -265,21 +210,13 @@ class WorkTicketAdmin(ModelAdmin):
     inlines = [ProductionLogInline]
     actions = [advance_to_next_stage, mark_as_rework]
 
-    @display(description="Stage", ordering="current_stage", label=TICKET_STAGE_LABELS)
+    @display(description="Stage", ordering="current_stage")
     def stage_badge(self, obj):
-        return obj.current_stage, obj.get_current_stage_display()
+        return obj.get_current_stage_display()
 
-    @display(
-        description="Priority",
-        ordering="priority",
-        label={
-            "normal": "info",
-            "urgent": "warning",
-            "rush": "danger",
-        },
-    )
+    @display(description="Priority", ordering="priority")
     def priority_badge(self, obj):
-        return obj.priority, obj.get_priority_display()
+        return obj.get_priority_display()
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "assigned_to":
@@ -293,15 +230,15 @@ class ProductionLogAdmin(ModelAdmin):
     list_filter = ["to_stage", "timestamp"]
     search_fields = ["ticket__id", "comments"]
 
-    @display(description="From", ordering="from_stage", label=TICKET_STAGE_LABELS)
+    @display(description="From", ordering="from_stage")
     def from_stage_badge(self, obj):
         if not obj.from_stage:
-            return None, "—"
-        return obj.from_stage, obj.get_from_stage_display()
+            return "—"
+        return obj.get_from_stage_display()
 
-    @display(description="To", ordering="to_stage", label=TICKET_STAGE_LABELS)
+    @display(description="To", ordering="to_stage")
     def to_stage_badge(self, obj):
-        return obj.to_stage, obj.get_to_stage_display()
+        return obj.get_to_stage_display()
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -316,10 +253,6 @@ class ProductionLogAdmin(ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-
-# ============================================================
-# MEMBER 5 - Delivery
-# ============================================================
 
 @admin.register(Delivery)
 class DeliveryAdmin(ModelAdmin):
