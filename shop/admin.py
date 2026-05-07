@@ -36,9 +36,13 @@ from .models import (
 
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
-    list_display = ['first_name', 'last_name', 'phone', 'email', 'created_at']
-    search_fields = ['first_name', 'last_name', 'phone', 'email']
-    list_filter = ['created_at']
+    list_display = ("full_name", "phone", "email", "created_at")
+    search_fields = ("first_name", "last_name", "phone", "email")
+    list_filter = ("created_at",)
+    readonly_fields = ("created_at",)
+
+    def full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
 
 
 # ============================================================
