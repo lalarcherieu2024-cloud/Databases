@@ -121,39 +121,172 @@ class MaterialAdmin(ModelAdmin):
 #   - Optional admin action: "Advance ticket to next stage" (creates a
 #     ProductionLog row automatically)
 
+STAGE_ORDER = [
+    'order_received',
+    'design_confirmed',
+    'cutting',
+    'sewing',
+    'finishing',
+    'quality_check',
+    'ready_for_delivery',
+]
+ 
+STAGE_LABELS = dict(TICKET_STAGE_CHOICES)
+ 
+ 
+def _next_stage(current: str) -> str | None:
+    """Return the stage that follows *current* in STAGE_ORDER, or None."""
+    try:
+        idx = STAGE_ORDER.index(current)
+    except ValueError:
+        return None
+    next_idx = idx + 1
+    return STAGE_ORDER[next_idx] if next_idx < len(STAGE_ORDER) else None
+ 
+class ProductionLogInline(TabularInline):
+    model = ProductionLog
+    extra = 0
+    fields = ['timestamp', 'from_stage', 'to_stage', 'performed_by', 'comments']
+    readonly_fields = ['timestamp', 'from_stage', 'to_stage', 'performed_by', 'comments']
+    can_delete = False
+    ordering = ['-timestamp']
+ 
+    def has_add_permission(self, request, obj=None):
+        return False
+
+ 
+@admin.action(description='⏩ Advance selected tickets to next stage')
+def advance_to_next_stage(modeladmin, request, queryset):
+    advanced = 0
+    skipped_final = 0
+ 
+    for ticket in queryset:
+        old_stage = ticket.current_stage
+        new_stage = _next_stage(old_stage)
+ 
+        if new_stage is None:
+            skipped_final += 1
+            continue
+          
+        if new_stage == 'ready_for_delivery':
+            passed_qc = ticket.logs.filter(to_stage='quality_check').exists()
+            if not passed_qc:
+                modeladmin.message_user(
+                    request,
+                    format_html(
+                        'Ticket <strong>#{}</strong> cannot advance to '
+                        '<em>Ready for Delivery</em> — '
+                        'Quality Check has not been completed yet.',
+                        ticket.pk,
+                    ),
+                    level=messages.WARNING,
+                )
+                continue
+ 
+        ticket.current_stage = new_stage
+        ticket.save(update_fields=['current_stage', 'updated_at'])
+ 
+        ProductionLog.objects.create(
+            ticket=ticket,
+            performed_by=None, 
+            from_stage=old_stage,
+            to_stage=new_stage,
+            comments=(
+                f'Stage advanced via admin bulk action: '
+                f'{STAGE_LABELS.get(old_stage, old_stage)} → '
+                f'{STAGE_LABELS.get(new_stage, new_stage)}'
+            ),
+        )
+        advanced += 1
+ 
+    if advanced:
+        modeladmin.message_user(
+            request,
+            f'{advanced} ticket(s) successfully advanced to the next stage.',
+            level=messages.SUCCESS,
+        )
+    if skipped_final:
+        modeladmin.message_user(
+            request,
+            f'{skipped_final} ticket(s) skipped, already at the final stage.',
+            level=messages.WARNING,
+        )
+ 
+ 
+@admin.action(description='Send selected tickets to Rework')
+def mark_as_rework(modeladmin, request, queryset):
+    moved = 0
+ 
+    for ticket in queryset:
+        if ticket.current_stage == 'rework':
+            continue  
+ 
+        old_stage = ticket.current_stage
+        ticket.current_stage = 'rework'
+        ticket.save(update_fields=['current_stage', 'updated_at'])
+ 
+        ProductionLog.objects.create(
+            ticket=ticket,
+            performed_by=None,
+            from_stage=old_stage,
+            to_stage='rework',
+            comments=(
+                f'Sent to rework via admin bulk action. '
+                f'Previous stage: {STAGE_LABELS.get(old_stage, old_stage)}.'
+            ),
+        )
+        moved += 1
+ 
+    if moved:
+        modeladmin.message_user(
+            request,
+            f'{moved} ticket(s) moved to Rework.',
+            level=messages.SUCCESS,
+        )
+    else:
+        modeladmin.message_user(
+            request,
+            'No tickets were changed — all selected tickets were already in Rework.',
+            level=messages.WARNING,
+        )
+ 
 @admin.register(Employee)
 class EmployeeAdmin(ModelAdmin):
     list_display = ['first_name', 'last_name', 'role', 'specialization', 'is_active']
     list_filter = ['is_active', 'role']
     search_fields = ['first_name', 'last_name', 'role']
-
-
+ 
 @admin.register(WorkTicket)
 class WorkTicketAdmin(ModelAdmin):
     list_display = ['id', 'garment', 'assigned_to', 'current_stage', 'priority', 'deadline']
     list_filter = ['current_stage', 'priority']
     search_fields = ['id', 'garment__garment_type']
-    autocomplete_fields = ['garment', 'assigned_to']
-
+    autocomplete_fields = ['garment']
+    inlines = [ProductionLogInline]
+    actions = [advance_to_next_stage, mark_as_rework]
+ 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        # Business Rule 5: only active employees can be assigned to new tickets
         if db_field.name == 'assigned_to':
             kwargs['queryset'] = Employee.objects.filter(is_active=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
-
+ 
 @admin.register(ProductionLog)
 class ProductionLogAdmin(ModelAdmin):
     list_display = ['id', 'ticket', 'from_stage', 'to_stage', 'performed_by', 'timestamp']
     list_filter = ['to_stage', 'timestamp']
     search_fields = ['ticket__id', 'comments']
-
+ 
     def get_readonly_fields(self, request, obj=None):
-        # Business Rule 9: production log entries are immutable once created
-        if obj:
+        if obj:  
             return [f.name for f in self.model._meta.fields]
         return super().get_readonly_fields(request, obj)
-
+ 
+    def has_change_permission(self, request, obj=None):
+        if obj:
+            return False
+        return super().has_change_permission(request, obj)
+ 
     def has_delete_permission(self, request, obj=None):
         return False
 
