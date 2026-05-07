@@ -212,3 +212,6 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery for Order #{self.order_id}"
+
+# Module E — Delivery
+from shop.models_delivery import Delivery
