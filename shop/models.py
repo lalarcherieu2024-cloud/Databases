@@ -188,14 +188,14 @@ class Employee(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     specialization = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
-
+ 
     class Meta:
         ordering = ['last_name', 'first_name']
-
+ 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.role})"
-
-
+ 
+ 
 class WorkTicket(models.Model):
     # SCHEMA FIX: original schema had 'garment_type' as FK - this was a bug.
     # The FK should point to Garment; garment_type (string) lives on Garment.
@@ -213,14 +213,32 @@ class WorkTicket(models.Model):
     instructions = models.TextField(blank=True)  # SCHEMA FIX: this is TEXT, not FK
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+ 
     class Meta:
         ordering = ['-created_at']
-
+ 
     def __str__(self):
         return f"Ticket #{self.pk} - {self.garment}"
-
-
+ 
+    def clean(self):
+        """
+        STRETCH GOAL: Validate that a ticket cannot jump to ready_for_delivery
+        without having passed through quality_check first.
+ 
+        We check the ProductionLog for this ticket to see if quality_check
+        was ever a to_stage.  This runs on full_clean() / ModelAdmin save.
+        """
+        from django.core.exceptions import ValidationError
+ 
+        if self.current_stage == 'ready_for_delivery' and self.pk:
+            passed_qc = self.logs.filter(to_stage='quality_check').exists()
+            if not passed_qc:
+                raise ValidationError(
+                    "A ticket cannot move to 'Ready for Delivery' without first "
+                    "completing the 'Quality Check' stage."
+                )
+ 
+ 
 class ProductionLog(models.Model):
     """
     Immutable audit trail of stage transitions (Business Rule 9).
@@ -239,13 +257,12 @@ class ProductionLog(models.Model):
     to_stage = models.CharField(max_length=30, choices=TICKET_STAGE_CHOICES)
     comments = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-
+ 
     class Meta:
         ordering = ['-timestamp']
-
+ 
     def __str__(self):
         return f"Log #{self.pk}: {self.from_stage} -> {self.to_stage}"
-
 
 # ============================================================
 # MEMBER 5 - Delivery
