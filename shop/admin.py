@@ -287,5 +287,3 @@ class DeliveryAdmin(ModelAdmin):
     search_fields = ['order__id', 'recipient_name']
     autocomplete_fields = ['order']
 
-# Module E — Delivery admin
-import shop.admin_delivery
