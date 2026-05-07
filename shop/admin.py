@@ -155,7 +155,7 @@ class ProductionLogInline(TabularInline):
         return False
 
  
-@admin.action(description='⏩ Advance selected tickets to next stage')
+@admin.action(description='Advance selected tickets to next stage')
 def advance_to_next_stage(modeladmin, request, queryset):
     advanced = 0
     skipped_final = 0
