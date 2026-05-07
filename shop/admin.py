@@ -163,9 +163,13 @@ class MeasurementAdmin(ModelAdmin):
 
 @admin.register(Material)
 class MaterialAdmin(ModelAdmin):
-    list_display = ['name', 'fabric_type', 'color', 'stock_meters', 'price_per_meter']
+    list_display = ['name', 'fabric_type', 'color', 'stock_meters', 'low_stock', 'price_per_meter']
     list_filter = ['fabric_type']
     search_fields = ['name', 'color']
+
+    @admin.display(boolean=True, description='Low stock (< 5m)')
+    def low_stock(self, obj):
+        return obj.stock_meters < 5
 
 
 # ============================================================

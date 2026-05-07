@@ -1,30 +1,5 @@
-"""
-Costuras de Paqui - Sewing Shop Management System
-==================================================
-
-Models organized by team member ownership.
-Each member edits ONLY their assigned section to minimize merge conflicts.
-
-OWNERSHIP MAP:
-  Member 1 -> Customer
-  Member 2 -> Order, OrderItem
-  Member 3 -> Garment, Measurement, Material
-  Member 4 -> Employee, WorkTicket, ProductionLog
-  Member 5 -> Delivery
-
-SCHEMA FIXES applied (from original schema PDF):
-  - WorkTicket.garment_type (FK) renamed to 'garment' (FK to Garment).
-    The garment_type STRING lives on Garment, not WorkTicket.
-  - WorkTicket.instructions is TextField (not FK - was a typo in the schema).
-  - Garment.materials is a simple ManyToManyField (no through-table for v1).
-  - Order.total_price is a manually-entered DecimalField (no auto-calc for v1).
-"""
 from django.db import models
 
-
-# ============================================================
-# CHOICES (shared across modules - agreed by whole team Day 1)
-# ============================================================
 
 ORDER_STATUS_CHOICES = [
     ('received', 'Received'),
@@ -66,10 +41,6 @@ DELIVERY_METHOD_CHOICES = [
 ]
 
 
-# ============================================================
-# MEMBER 1 - Customer
-# ============================================================
-
 class Customer(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -85,11 +56,6 @@ class Customer(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-
-# ============================================================
-# MEMBER 3 - Garment, Measurement, Material
-# (Defined BEFORE Order because Order/OrderItem references Garment)
-# ============================================================
 
 class Material(models.Model):
     name = models.CharField(max_length=100)
@@ -142,10 +108,6 @@ class Garment(models.Model):
         return f"{self.garment_type} ({self.color})" if self.color else self.garment_type
 
 
-# ============================================================
-# MEMBER 2 - Order, OrderItem
-# ============================================================
-
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
     order_date = models.DateField()
@@ -177,10 +139,6 @@ class OrderItem(models.Model):
         return self.quantity * self.unit_price
 
 
-# ============================================================
-# MEMBER 4 - Employee, WorkTicket, ProductionLog
-# ============================================================
-
 class Employee(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -197,8 +155,6 @@ class Employee(models.Model):
 
 
 class WorkTicket(models.Model):
-    # SCHEMA FIX: original schema had 'garment_type' as FK - this was a bug.
-    # The FK should point to Garment; garment_type (string) lives on Garment.
     garment = models.ForeignKey(Garment, on_delete=models.CASCADE, related_name='tickets')
     assigned_to = models.ForeignKey(
         Employee,
@@ -210,7 +166,7 @@ class WorkTicket(models.Model):
     current_stage = models.CharField(max_length=30, choices=TICKET_STAGE_CHOICES, default='order_received')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='normal')
     deadline = models.DateField(null=True, blank=True)
-    instructions = models.TextField(blank=True)  # SCHEMA FIX: this is TEXT, not FK
+    instructions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -222,11 +178,6 @@ class WorkTicket(models.Model):
 
 
 class ProductionLog(models.Model):
-    """
-    Immutable audit trail of stage transitions (Business Rule 9).
-    Member 4 enforces immutability in admin.py via has_change_permission /
-    has_delete_permission.
-    """
     ticket = models.ForeignKey(WorkTicket, on_delete=models.CASCADE, related_name='logs')
     performed_by = models.ForeignKey(
         Employee,
@@ -246,10 +197,6 @@ class ProductionLog(models.Model):
     def __str__(self):
         return f"Log #{self.pk}: {self.from_stage} -> {self.to_stage}"
 
-
-# ============================================================
-# MEMBER 5 - Delivery
-# ============================================================
 
 class Delivery(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='delivery')
