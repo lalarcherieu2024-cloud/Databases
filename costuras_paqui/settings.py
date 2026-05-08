@@ -240,6 +240,17 @@ UNFOLD = {
                     },
                 ],
             },
+            {
+                "title": "Tools",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Production Calendar",
+                        "icon": "calendar_month",
+                        "link": "/admin/calendar/",
+                    },
+                ],
+            },
         ],
-    },
+    }
 }

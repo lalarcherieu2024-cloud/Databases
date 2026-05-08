@@ -331,7 +331,20 @@ class ProductionLogAdmin(ModelAdmin):
 
 @admin.register(Delivery)
 class DeliveryAdmin(ModelAdmin):
-    list_display = ["order", "delivery_date", "method", "recipient_name", "confirmed"]
+    list_display = ["order", "delivery_date", "method", "recipient_name", "confirmed_badge"]
     list_filter = ["method", "confirmed", "delivery_date"]
     search_fields = ["order__id", "recipient_name"]
     autocomplete_fields = ["order"]
+
+    @display(
+        description="Status",
+        ordering="confirmed",
+        label={
+            True: "success",
+            False: "warning",
+        },
+    )
+    def confirmed_badge(self, obj):
+        if obj.confirmed:
+            return True, "Confirmed"
+        return False, "Pending"
