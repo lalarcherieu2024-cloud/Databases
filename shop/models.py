@@ -1,4 +1,15 @@
-from django.db import models
+from datetime import date, timedelta
+
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
+
+
+def today():
+    return date.today()
+
+
+def tomorrow():
+    return date.today() + timedelta(days=1)
 
 
 ORDER_STATUS_CHOICES = [
@@ -39,6 +50,22 @@ DELIVERY_METHOD_CHOICES = [
     ("courier", "Courier"),
     ("in_person", "In-Person Delivery"),
 ]
+
+# Linear stage order for "advance to next stage" action and the auto-log.
+TICKET_STAGE_ORDER = [s[0] for s in TICKET_STAGE_CHOICES if s[0] != "rework"]
+
+# Keywords used to match each ticket stage against an employee's
+# `role` and `specialization` (free-text). An empty list means "any employee".
+STAGE_SPECIALIZATION_KEYWORDS = {
+    "order_received": [],
+    "design_confirmed": ["design", "master", "owner"],
+    "cutting": ["cut"],
+    "sewing": ["sew", "tailor", "seamstress", "stitch", "dress", "suit", "blouse", "trouser"],
+    "finishing": ["finish", "apprentice"],
+    "quality_check": ["quality", "master", "owner"],
+    "ready_for_delivery": [],
+    "rework": [],
+}
 
 
 class Customer(models.Model):
@@ -107,11 +134,16 @@ class Garment(models.Model):
     def __str__(self):
         return f"{self.garment_type} ({self.color})" if self.color else self.garment_type
 
+    @property
+    def order(self):
+        item = self.order_items.first()
+        return item.order if item else None
+
 
 class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="orders")
-    order_date = models.DateField()
-    due_date = models.DateField()
+    order_date = models.DateField(default=today, help_text="Must be today's date.")
+    due_date = models.DateField(default=tomorrow, help_text="Defaults to tomorrow; must be after the order date.")
     status = models.CharField(max_length=30, choices=ORDER_STATUS_CHOICES, default="received")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     remarks = models.TextField(blank=True)
@@ -123,6 +155,16 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.pk} - {self.customer}"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.pk is None and self.order_date and self.order_date != date.today():
+            errors["order_date"] = "Order date must be today's date."
+        if self.order_date and self.due_date and self.due_date <= self.order_date:
+            errors["due_date"] = "Due date must be after the order date."
+        if errors:
+            raise ValidationError(errors)
 
 
 class OrderItem(models.Model):
@@ -162,6 +204,7 @@ class WorkTicket(models.Model):
         null=True,
         blank=True,
         related_name="tickets",
+        help_text="Pick an active employee whose role/specialization matches the current stage.",
     )
     current_stage = models.CharField(max_length=30, choices=TICKET_STAGE_CHOICES, default="order_received")
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="normal")
@@ -173,12 +216,15 @@ class WorkTicket(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Snapshot the loaded stage so save() can detect transitions.
+        self.__original_stage = self.current_stage
+
     def __str__(self):
         return f"Ticket #{self.pk} - {self.garment}"
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-
         if self.current_stage == "ready_for_delivery" and self.pk:
             passed_qc = self.logs.filter(to_stage="quality_check").exists()
             if not passed_qc:
@@ -186,6 +232,38 @@ class WorkTicket(models.Model):
                     "A ticket cannot move to 'Ready for Delivery' without first "
                     "completing the 'Quality Check' stage."
                 )
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        old_stage = self.__original_stage
+        super().save(*args, **kwargs)
+
+        if not is_new and old_stage != self.current_stage:
+            ProductionLog.objects.create(
+                ticket=self,
+                performed_by=self.assigned_to,
+                from_stage=old_stage or "",
+                to_stage=self.current_stage,
+                comments=f"Stage changed: {old_stage or '—'} → {self.current_stage}",
+            )
+
+        if self.current_stage == "ready_for_delivery":
+            self._ensure_delivery()
+
+        self.__original_stage = self.current_stage
+
+    def _ensure_delivery(self):
+        order = self.garment.order
+        if not order:
+            return
+        Delivery.objects.get_or_create(
+            order=order,
+            defaults={"method": "pickup"},
+        )
+        if order.status not in ("delivered", "ready_for_delivery"):
+            order.status = "ready_for_delivery"
+            order.save(update_fields=["status", "updated_at"])
 
 
 class ProductionLog(models.Model):
@@ -223,3 +301,10 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery for Order #{self.order_id}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Confirming the delivery moves the related order to "Delivered".
+        if self.confirmed and self.order.status != "delivered":
+            self.order.status = "delivered"
+            self.order.save(update_fields=["status", "updated_at"])

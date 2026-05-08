@@ -3,6 +3,7 @@ Costuras de Paqui - Admin Configuration
 """
 
 from django.contrib import admin, messages
+from django.db.models import Q
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
 from django import forms
@@ -12,7 +13,19 @@ from .models import (
     Garment, Measurement, Material,
     Employee, WorkTicket, ProductionLog,
     Delivery,
+    STAGE_SPECIALIZATION_KEYWORDS,
+    TICKET_STAGE_ORDER,
 )
+
+
+def _next_stage(current):
+    try:
+        idx = TICKET_STAGE_ORDER.index(current)
+    except ValueError:
+        return None
+    if idx + 1 >= len(TICKET_STAGE_ORDER):
+        return None
+    return TICKET_STAGE_ORDER[idx + 1]
 
 
 @admin.register(Customer)
@@ -228,29 +241,18 @@ def advance_to_next_stage(modeladmin, request, queryset):
     skipped = 0
 
     for ticket in queryset:
-        old_stage = ticket.current_stage
-        new_stage = _next_stage(old_stage)
-
+        new_stage = _next_stage(ticket.current_stage)
         if new_stage is None:
             skipped += 1
             continue
-
         ticket.current_stage = new_stage
-        ticket.save(update_fields=["current_stage", "updated_at"])
-
-        ProductionLog.objects.create(
-            ticket=ticket,
-            performed_by=None,
-            from_stage=old_stage,
-            to_stage=new_stage,
-            comments=f"Stage advanced via admin action: {old_stage} → {new_stage}",
-        )
-
+        # WorkTicket.save() writes the ProductionLog automatically and,
+        # when reaching "ready_for_delivery", auto-creates the Delivery.
+        ticket.save()
         advanced += 1
 
     if advanced:
         modeladmin.message_user(request, f"{advanced} ticket(s) advanced.", level=messages.SUCCESS)
-
     if skipped:
         modeladmin.message_user(request, f"{skipped} ticket(s) skipped.", level=messages.WARNING)
 
@@ -258,25 +260,12 @@ def advance_to_next_stage(modeladmin, request, queryset):
 @admin.action(description="Send selected tickets to Rework")
 def mark_as_rework(modeladmin, request, queryset):
     moved = 0
-
     for ticket in queryset:
         if ticket.current_stage == "rework":
             continue
-
-        old_stage = ticket.current_stage
         ticket.current_stage = "rework"
-        ticket.save(update_fields=["current_stage", "updated_at"])
-
-        ProductionLog.objects.create(
-            ticket=ticket,
-            performed_by=None,
-            from_stage=old_stage,
-            to_stage="rework",
-            comments=f"Sent to rework via admin action. Previous stage: {old_stage}.",
-        )
-
+        ticket.save()
         moved += 1
-
     modeladmin.message_user(request, f"{moved} ticket(s) moved to rework.", level=messages.SUCCESS)
 
 
@@ -325,9 +314,22 @@ class WorkTicketAdmin(ModelAdmin):
     def priority_badge(self, obj):
         return obj.priority, obj.get_priority_display()
 
+    def get_form(self, request, obj=None, **kwargs):
+        request._workticket_obj = obj
+        return super().get_form(request, obj, **kwargs)
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "assigned_to":
-            kwargs["queryset"] = Employee.objects.filter(is_active=True)
+            qs = Employee.objects.filter(is_active=True)
+            obj = getattr(request, "_workticket_obj", None)
+            stage = obj.current_stage if obj else "order_received"
+            keywords = STAGE_SPECIALIZATION_KEYWORDS.get(stage, [])
+            if keywords:
+                q = Q()
+                for kw in keywords:
+                    q |= Q(role__icontains=kw) | Q(specialization__icontains=kw)
+                qs = qs.filter(q)
+            kwargs["queryset"] = qs.distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
