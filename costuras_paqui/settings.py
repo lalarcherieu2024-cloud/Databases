@@ -197,11 +197,6 @@ UNFOLD = {
                         "link": "/admin/shop/garment/",
                     },
                     {
-                        "title": "Measurements",
-                        "icon": "straighten",
-                        "link": "/admin/shop/measurement/",
-                    },
-                    {
                         "title": "Materials",
                         "icon": "inventory_2",
                         "link": "/admin/shop/material/",

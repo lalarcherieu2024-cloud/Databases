@@ -5,7 +5,7 @@ Costuras de Paqui - Admin Configuration
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import display
-
+from django import forms
 from .models import (
     Customer,
     Order, OrderItem,
@@ -74,28 +74,111 @@ class OrderAdmin(ModelAdmin):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(ModelAdmin):
-    list_display = ["id", "order", "garment", "quantity", "unit_price"]
+    list_display = ["id", "order", "garment", "quantity", "unit_price_display", "line_total_display"]
     search_fields = ["order__id", "garment__garment_type"]
+
+    @display(description="Unit price", ordering="unit_price")
+    def unit_price_display(self, obj):
+        return f"€{obj.unit_price:,.2f}"
+
+    @display(description="Line total")
+    def line_total_display(self, obj):
+        return f"€{obj.line_total:,.2f}"
+
+
+
+class GarmentForm(forms.ModelForm):
+    """
+    Custom form for Garment that exposes Measurement fields inline.
+    Saves changes back to the related Measurement (creating one if needed).
+    """
+    bust = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    waist = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    hips = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    shoulder_width = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    sleeve_length = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    inseam = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    total_length = forms.DecimalField(max_digits=6, decimal_places=2, required=False)
+    extra_notes = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), required=False)
+
+    class Meta:
+        model = Garment
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-fill measurement fields from the linked Measurement, if any
+        if self.instance and self.instance.pk and self.instance.measurement:
+            m = self.instance.measurement
+            self.fields["bust"].initial = m.bust
+            self.fields["waist"].initial = m.waist
+            self.fields["hips"].initial = m.hips
+            self.fields["shoulder_width"].initial = m.shoulder_width
+            self.fields["sleeve_length"].initial = m.sleeve_length
+            self.fields["inseam"].initial = m.inseam
+            self.fields["total_length"].initial = m.total_length
+            self.fields["extra_notes"].initial = m.extra_notes
+
+    def save(self, commit=True):
+        garment = super().save(commit=False)
+
+        # Get or create the linked Measurement
+        if garment.measurement:
+            m = garment.measurement
+        else:
+            m = Measurement.objects.create()
+            garment.measurement = m
+
+        # Push form values into the Measurement
+        m.bust = self.cleaned_data.get("bust")
+        m.waist = self.cleaned_data.get("waist")
+        m.hips = self.cleaned_data.get("hips")
+        m.shoulder_width = self.cleaned_data.get("shoulder_width")
+        m.sleeve_length = self.cleaned_data.get("sleeve_length")
+        m.inseam = self.cleaned_data.get("inseam")
+        m.total_length = self.cleaned_data.get("total_length")
+        m.extra_notes = self.cleaned_data.get("extra_notes") or ""
+        m.save()
+
+        if commit:
+            garment.save()
+            self.save_m2m()
+        return garment
 
 
 @admin.register(Garment)
 class GarmentAdmin(ModelAdmin):
+    form = GarmentForm
     list_display = ["id", "garment_type", "color", "priority_badge", "status_badge", "created_at"]
     list_filter = ["status", "priority", "garment_type"]
     search_fields = ["garment_type", "color"]
     filter_horizontal = ["materials"]
-    autocomplete_fields = ["measurement"]
+
+    fieldsets = (
+        ("Garment details", {
+            "fields": ("garment_type", "color", "design_notes", "priority", "status", "materials"),
+        }),
+        ("📏 Measurements", {
+            "fields": (
+                ("bust", "waist", "hips"),
+                ("shoulder_width", "sleeve_length"),
+                ("inseam", "total_length"),
+                "extra_notes",
+            ),
+            "classes": ("collapse",),  # collapsible section, opens on click
+        }),
+    )
 
     @display(
-    description="Status",
-    ordering="status",
-    label={
-        "pending": "info",
-        "in_production": "warning",
-        "completed": "success",
-        "on_hold": "danger",
-    },
-)
+        description="Status",
+        ordering="status",
+        label={
+            "pending": "info",
+            "in_production": "warning",
+            "completed": "success",
+            "on_hold": "danger",
+        },
+    )
     def status_badge(self, obj):
         return obj.status, obj.get_status_display()
 
@@ -110,8 +193,6 @@ class GarmentAdmin(ModelAdmin):
     )
     def priority_badge(self, obj):
         return obj.priority, obj.get_priority_display()
-
-
 @admin.register(Measurement)
 class MeasurementAdmin(ModelAdmin):
     list_display = ["id", "bust", "waist", "hips", "total_length"]
@@ -127,29 +208,6 @@ class MaterialAdmin(ModelAdmin):
     @admin.display(boolean=True, description="Low stock (< 5m)")
     def low_stock(self, obj):
         return obj.stock_meters < 5
-
-
-STAGE_ORDER = [
-    "order_received",
-    "design_confirmed",
-    "cutting",
-    "sewing",
-    "finishing",
-    "quality_check",
-    "ready_for_delivery",
-]
-
-
-def _next_stage(current):
-    try:
-        index = STAGE_ORDER.index(current)
-    except ValueError:
-        return None
-
-    next_index = index + 1
-    if next_index < len(STAGE_ORDER):
-        return STAGE_ORDER[next_index]
-    return None
 
 
 class ProductionLogInline(TabularInline):
