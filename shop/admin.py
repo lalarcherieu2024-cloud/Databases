@@ -51,9 +51,20 @@ class OrderAdmin(ModelAdmin):
     def total_price_display(self, obj):
         return f"€{obj.total_price:,.2f}"
 
-    @display(description="Status", ordering="status")
+    @display(
+    description="Status",
+    ordering="status",
+    label={
+        "received": "info",
+        "confirmed": "info",
+        "in_production": "warning",
+        "ready_for_delivery": "success",
+        "delivered": "success",
+        "cancelled": "danger",
+    },
+)
     def status_badge(self, obj):
-        return obj.get_status_display()
+        return obj.status, obj.get_status_display()
 
     @admin.action(description="Mark selected orders as confirmed")
     def mark_as_confirmed(self, request, queryset):
@@ -75,13 +86,30 @@ class GarmentAdmin(ModelAdmin):
     filter_horizontal = ["materials"]
     autocomplete_fields = ["measurement"]
 
-    @display(description="Status", ordering="status")
+    @display(
+    description="Status",
+    ordering="status",
+    label={
+        "pending": "info",
+        "in_production": "warning",
+        "completed": "success",
+        "on_hold": "danger",
+    },
+)
     def status_badge(self, obj):
-        return obj.get_status_display()
+        return obj.status, obj.get_status_display()
 
-    @display(description="Priority", ordering="priority")
+    @display(
+        description="Priority",
+        ordering="priority",
+        label={
+            "normal": "info",
+            "urgent": "warning",
+            "rush": "danger",
+        },
+    )
     def priority_badge(self, obj):
-        return obj.get_priority_display()
+        return obj.priority, obj.get_priority_display()
 
 
 @admin.register(Measurement)
@@ -210,13 +238,34 @@ class WorkTicketAdmin(ModelAdmin):
     inlines = [ProductionLogInline]
     actions = [advance_to_next_stage, mark_as_rework]
 
-    @display(description="Stage", ordering="current_stage")
+    @display(
+    description="Stage",
+    ordering="current_stage",
+    label={
+        "order_received": "info",
+        "design_confirmed": "info",
+        "cutting": "warning",
+        "sewing": "warning",
+        "finishing": "warning",
+        "quality_check": "warning",
+        "ready_for_delivery": "success",
+        "rework": "danger",
+    },
+)
     def stage_badge(self, obj):
-        return obj.get_current_stage_display()
+        return obj.current_stage, obj.get_current_stage_display()
 
-    @display(description="Priority", ordering="priority")
+    @display(
+        description="Priority",
+        ordering="priority",
+        label={
+            "normal": "info",
+            "urgent": "warning",
+            "rush": "danger",
+        },
+    )
     def priority_badge(self, obj):
-        return obj.get_priority_display()
+        return obj.priority, obj.get_priority_display()
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "assigned_to":
@@ -230,15 +279,41 @@ class ProductionLogAdmin(ModelAdmin):
     list_filter = ["to_stage", "timestamp"]
     search_fields = ["ticket__id", "comments"]
 
-    @display(description="From", ordering="from_stage")
+    @display(
+        description="From",
+        ordering="from_stage",
+        label={
+            "order_received": "info",
+            "design_confirmed": "info",
+            "cutting": "warning",
+            "sewing": "warning",
+            "finishing": "warning",
+            "quality_check": "warning",
+            "ready_for_delivery": "success",
+            "rework": "danger",
+        },
+    )
     def from_stage_badge(self, obj):
         if not obj.from_stage:
-            return "—"
-        return obj.get_from_stage_display()
+            return None, "—"
+        return obj.from_stage, obj.get_from_stage_display()
 
-    @display(description="To", ordering="to_stage")
+    @display(
+        description="To",
+        ordering="to_stage",
+        label={
+            "order_received": "info",
+            "design_confirmed": "info",
+            "cutting": "warning",
+            "sewing": "warning",
+            "finishing": "warning",
+            "quality_check": "warning",
+            "ready_for_delivery": "success",
+            "rework": "danger",
+        },
+    )
     def to_stage_badge(self, obj):
-        return obj.get_to_stage_display()
+        return obj.to_stage, obj.get_to_stage_display()
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
