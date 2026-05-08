@@ -10,7 +10,7 @@ This application manages the full lifecycle of customer orders at Costuras de Pa
 
 | Module | Owner | Branch | Scope |
 |--------|-------|--------|-------|
-| A — Customer | — | `module-a-customers` | Customer model + admin |
+| A — Customer | Alexandra | `module-a-customers` | Customer model + admin |
 | B — Orders | Luna | `feature/luna-orders` | Order, OrderItem models + admin |
 | C — Garments & Materials | Sanad | `feature/sanad-garments` | Garment, Measurement, Material models |
 | D — Production | Edard | `feature/edard-models` | Employee, WorkTicket, ProductionLog |
